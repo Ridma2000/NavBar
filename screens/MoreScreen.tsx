@@ -31,10 +31,12 @@ type MoreScreenProps = {
 
 const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
   const [activeTool, setActiveTool] = React.useState<ToolItem | null>(null);
+  const [isReordering, setIsReordering] = React.useState(false);
   const ToolComponent = activeTool?.component;
 
   React.useEffect(() => {
     setActiveTool(null);
+    setIsReordering(false);
   }, [resetVersion]);
 
   return (
@@ -62,7 +64,15 @@ const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
         <View style={styles.sheetWrapper}>
           <View style={styles.sheet}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetHeaderText}>Reorder</Text>
+              <TouchableOpacity
+                style={styles.reorderButton}
+                activeOpacity={0.8}
+                onPress={() => {
+                  console.log('[More] Reorder button pressed');
+                  setIsReordering(prev => !prev);
+                }}>
+                <Text style={styles.sheetHeaderText}>{isReordering ? 'Done' : 'Reorder'}</Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.grid}>
               {TOOL_ITEMS.map(item => (
@@ -114,6 +124,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginBottom: 16,
+  },
+  reorderButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   sheetHeaderText: {
     fontSize: 14,
