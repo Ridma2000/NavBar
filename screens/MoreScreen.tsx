@@ -1,39 +1,75 @@
-﻿import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
+import React from 'react';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import EmailSignatureScreen from './tools/EmailSignatureScreen';
+import MeetingSpaceScreen from './tools/MeetingSpaceScreen';
+import HotelBookingScreen from './tools/HotelBookingScreen';
+import ContactsScreen from './tools/ContactsScreen';
+import ConferencingToolScreen from './tools/ConferencingToolScreen';
+import CustomFormScreen from './tools/CustomFormScreen';
+import PersonalWebsiteScreen from './tools/PersonalWebsiteScreen';
+import StripeIntegrationScreen from './tools/StripeIntegrationScreen';
 
-const TOOL_ITEMS = [
-  'Email Signature',
-  'Meeting Space',
-  'Hotel Booking',
-  'Contacts',
-  'Conferencing Tool',
-  'Custom Form',
-  'Personal Website',
-  'Stripe Integration',
+type ToolItem = {
+  label: string;
+  component: React.ComponentType;
+};
+
+const TOOL_ITEMS: ToolItem[] = [
+  {label: 'Email Signature', component: EmailSignatureScreen},
+  {label: 'Meeting Space', component: MeetingSpaceScreen},
+  {label: 'Hotel Booking', component: HotelBookingScreen},
+  {label: 'Contacts', component: ContactsScreen},
+  {label: 'Conferencing Tool', component: ConferencingToolScreen},
+  {label: 'Custom Form', component: CustomFormScreen},
+  {label: 'Personal Website', component: PersonalWebsiteScreen},
+  {label: 'Stripe Integration', component: StripeIntegrationScreen},
 ];
 
 const MoreScreen = (): JSX.Element => {
+  const [activeTool, setActiveTool] = React.useState<ToolItem | null>(null);
+  const ToolComponent = activeTool?.component;
+
   return (
     <View style={styles.container}>
-      <View style={styles.sheet}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetHeaderText}>Reorder</Text>
-        </View>
-        <View style={styles.grid}>
-          {TOOL_ITEMS.map(item => (
+      {ToolComponent && activeTool ? (
+        <View style={styles.toolScreen}>
+          <View style={styles.toolScreenHeader}>
             <TouchableOpacity
-              key={item}
-              style={styles.toolItem}
-              activeOpacity={0.9}
-              onPress={() => Alert.alert(item, 'Placeholder action')}>
-              <View style={styles.iconShell}>
-                <View style={styles.iconInner} />
-              </View>
-              <Text style={styles.toolLabel}>{item}</Text>
+              onPress={() => setActiveTool(null)}
+              style={styles.backButton}
+              activeOpacity={0.8}>
+              <Text style={styles.backButtonText}>Back</Text>
             </TouchableOpacity>
-          ))}
+            <Text style={styles.toolScreenTitle}>{activeTool.label}</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+          <View style={styles.toolScreenBody}>
+            <ToolComponent />
+          </View>
         </View>
-      </View>
+      ) : (
+        <View style={styles.sheetWrapper}>
+          <View style={styles.sheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetHeaderText}>Reorder</Text>
+            </View>
+            <View style={styles.grid}>
+              {TOOL_ITEMS.map(item => (
+                <TouchableOpacity
+                  key={item.label}
+                  style={styles.toolItem}
+                  activeOpacity={0.9}
+                  onPress={() => setActiveTool(item)}>
+                  <View style={styles.iconShell}>
+                    <View style={styles.iconInner} />
+                  </View>
+                  <Text style={styles.toolLabel}>{item.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -42,8 +78,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    justifyContent: 'flex-end',
     paddingBottom: 72,
+  },
+  sheetWrapper: {
+    flex: 1,
+    justifyContent: 'flex-end',
     paddingHorizontal: 20,
   },
   sheet: {
@@ -98,6 +137,39 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     color: '#1E3A4E',
+  },
+  toolScreen: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    paddingHorizontal: 20,
+    paddingTop: 24,
+  },
+  toolScreenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  backButtonText: {
+    color: '#FF7A3C',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  toolScreenTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#102F44',
+  },
+  headerSpacer: {
+    width: 56,
+  },
+  toolScreenBody: {
+    flex: 1,
   },
 });
 
