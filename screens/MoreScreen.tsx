@@ -25,9 +25,17 @@ const TOOL_ITEMS: ToolItem[] = [
   {label: 'Stripe Integration', component: StripeIntegrationScreen},
 ];
 
-const MoreScreen = (): JSX.Element => {
+type MoreScreenProps = {
+  resetVersion?: number;
+};
+
+const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
   const [activeTool, setActiveTool] = React.useState<ToolItem | null>(null);
   const ToolComponent = activeTool?.component;
+
+  React.useEffect(() => {
+    setActiveTool(null);
+  }, [resetVersion]);
 
   return (
     <View style={styles.container}>
@@ -35,7 +43,10 @@ const MoreScreen = (): JSX.Element => {
         <View style={styles.toolScreen}>
           <View style={styles.toolScreenHeader}>
             <TouchableOpacity
-              onPress={() => setActiveTool(null)}
+              onPress={() => {
+                console.log('[More] Back pressed');
+                setActiveTool(null);
+              }}
               style={styles.backButton}
               activeOpacity={0.8}>
               <Text style={styles.backButtonText}>Back</Text>
@@ -59,7 +70,10 @@ const MoreScreen = (): JSX.Element => {
                   key={item.label}
                   style={styles.toolItem}
                   activeOpacity={0.9}
-                  onPress={() => setActiveTool(item)}>
+                  onPress={() => {
+                    console.log(`[More] ${item.label} pressed`);
+                    setActiveTool(item);
+                  }}>
                   <View style={styles.iconShell}>
                     <View style={styles.iconInner} />
                   </View>

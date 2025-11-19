@@ -7,7 +7,7 @@ import MoreScreen from './screens/MoreScreen';
 
 type NavItem = {
   label: string;
-  component: React.ComponentType;
+  component: React.ComponentType<any>;
   accentColor?: string;
 };
 
@@ -20,13 +20,19 @@ const NAV_ITEMS: NavItem[] = [
 
 const App = (): JSX.Element => {
   const [activeIndex, setActiveIndex] = React.useState(0);
+  const [moreResetVersion, setMoreResetVersion] = React.useState(0);
   const ActiveScreen = NAV_ITEMS[activeIndex].component;
+  const isMoreScreenActive = NAV_ITEMS[activeIndex].label === 'More';
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.body}>
         <View style={styles.screenContainer}>
-          <ActiveScreen />
+          {isMoreScreenActive ? (
+            <MoreScreen resetVersion={moreResetVersion} />
+          ) : (
+            <ActiveScreen />
+          )}
         </View>
         <View style={styles.navWrapper}>
           <View style={styles.navBar}>
@@ -38,7 +44,13 @@ const App = (): JSX.Element => {
                   key={item.label}
                   style={styles.navItem}
                   activeOpacity={0.8}
-                  onPress={() => setActiveIndex(index)}>
+                  onPress={() => {
+                    console.log(`[Nav] ${item.label} pressed`);
+                    if (item.label === 'More') {
+                      setMoreResetVersion(prev => prev + 1);
+                    }
+                    setActiveIndex(index);
+                  }}>
                   <View
                     style={[
                       styles.icon,
