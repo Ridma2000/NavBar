@@ -8,13 +8,14 @@ import MoreScreen from './screens/MoreScreen';
 type NavItem = {
   label: string;
   component: React.ComponentType;
+  accentColor?: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  {label: 'Calendar', component: CalendarScreen},
-  {label: 'Store', component: StoreScreen},
-  {label: 'Settings', component: SettingsScreen},
-  {label: 'More', component: MoreScreen},
+  {label: 'Calendar', component: CalendarScreen, accentColor: '#102F44'},
+  {label: 'Store', component: StoreScreen, accentColor: '#102F44'},
+  {label: 'Settings', component: SettingsScreen, accentColor: '#102F44'},
+  {label: 'More', component: MoreScreen, accentColor: '#FF7A3C'},
 ];
 
 const App = (): JSX.Element => {
@@ -31,6 +32,7 @@ const App = (): JSX.Element => {
           <View style={styles.navBar}>
             {NAV_ITEMS.map((item, index) => {
               const isActive = index === activeIndex;
+              const accentColor = item.accentColor ?? '#0D2B39';
               return (
                 <TouchableOpacity
                   key={item.label}
@@ -40,13 +42,23 @@ const App = (): JSX.Element => {
                   <View
                     style={[
                       styles.icon,
-                      isActive ? styles.iconActive : styles.iconInactive,
+                      isActive
+                        ? [
+                            styles.iconActive,
+                            {
+                              borderColor: accentColor,
+                              backgroundColor: accentColor === '#FF7A3C' ? '#FFF5EF' : '#F7F9FC',
+                            },
+                          ]
+                        : styles.iconInactive,
                     ]}
                   />
                   <Text
                     style={[
                       styles.navLabel,
-                      isActive ? styles.navLabelActive : styles.navLabelInactive,
+                      isActive
+                        ? [styles.navLabelActive, {color: accentColor}]
+                        : styles.navLabelInactive,
                     ]}>
                     {item.label}
                   </Text>
