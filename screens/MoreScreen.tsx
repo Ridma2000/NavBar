@@ -1,5 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {DraggableGrid} from 'react-native-draggable-grid';
 import EmailSignatureScreen from './tools/EmailSignatureScreen';
 import MeetingSpaceScreen from './tools/MeetingSpaceScreen';
 import HotelBookingScreen from './tools/HotelBookingScreen';
@@ -14,6 +15,10 @@ type ToolItem = {
   component: React.ComponentType;
 };
 
+type DraggableToolItem = ToolItem & {
+  key: string;
+};
+
 const TOOL_ITEMS: ToolItem[] = [
   {label: 'Email Signature', component: EmailSignatureScreen},
   {label: 'Meeting Space', component: MeetingSpaceScreen},
@@ -25,6 +30,18 @@ const TOOL_ITEMS: ToolItem[] = [
   {label: 'Stripe Integration', component: StripeIntegrationScreen},
 ];
 
+// Helper function to convert ToolItem to DraggableToolItem
+const toDraggableItem = (item: ToolItem, index: number): DraggableToolItem => ({
+  ...item,
+  key: `tool-${index}-${item.label}`,
+});
+
+// Helper function to convert DraggableToolItem back to ToolItem
+const toToolItem = (item: DraggableToolItem): ToolItem => {
+  const {key, ...toolItem} = item;
+  return toolItem;
+};
+
 type MoreScreenProps = {
   resetVersion?: number;
 };
@@ -32,11 +49,16 @@ type MoreScreenProps = {
 const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
   const [activeTool, setActiveTool] = React.useState<ToolItem | null>(null);
   const [isReordering, setIsReordering] = React.useState(false);
+  const [orderedItems, setOrderedItems] = React.useState<DraggableToolItem[]>(
+    TOOL_ITEMS.map((item, index) => toDraggableItem(item, index)),
+  );
   const ToolComponent = activeTool?.component;
 
   React.useEffect(() => {
     setActiveTool(null);
     setIsReordering(false);
+    // Reset to original order when resetVersion changes
+    setOrderedItems(TOOL_ITEMS.map((item, index) => toDraggableItem(item, index)));
   }, [resetVersion]);
 
   return (
@@ -74,23 +96,47 @@ const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
                 <Text style={styles.sheetHeaderText}>{isReordering ? 'Done' : 'Reorder'}</Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.grid}>
-              {TOOL_ITEMS.map(item => (
-                <TouchableOpacity
-                  key={item.label}
-                  style={styles.toolItem}
-                  activeOpacity={0.9}
-                  onPress={() => {
-                    console.log(`[More] ${item.label} pressed`);
-                    setActiveTool(item);
-                  }}>
-                  <View style={styles.iconShell}>
-                    <View style={styles.iconInner} />
-                  </View>
-                  <Text style={styles.toolLabel}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            {isReordering ? (
+              <DraggableGrid
+                numColumns={4}
+                data={orderedItems}
+                renderItem={(item: DraggableToolItem) => {
+                  return (
+                    <View style={styles.draggableItem}>
+                      <View style={styles.iconShell}>
+                        <View style={styles.iconInner} />
+                      </View>
+                      <Text style={styles.toolLabel}>{item.label}</Text>
+                    </View>
+                  );
+                }}
+                onDragRelease={(data: DraggableToolItem[]) => {
+                  console.log('[More] Drag release, new order:', data.map(d => d.label));
+                  setOrderedItems(data);
+                }}
+              />
+            ) : (
+              <View style={styles.grid}>
+                {orderedItems.map(item => {
+                  const toolItem = toToolItem(item);
+                  return (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={styles.toolItem}
+                      activeOpacity={0.9}
+                      onPress={() => {
+                        console.log(`[More] ${toolItem.label} pressed`);
+                        setActiveTool(toolItem);
+                      }}>
+                      <View style={styles.iconShell}>
+                        <View style={styles.iconInner} />
+                      </View>
+                      <Text style={styles.toolLabel}>{toolItem.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
           </View>
         </View>
       )}
@@ -142,6 +188,13 @@ const styles = StyleSheet.create({
     width: '25%',
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  draggableItem: {
+    width: '100%',
+    height: '100%',
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   iconShell: {
     width: 48,
