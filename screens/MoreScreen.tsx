@@ -49,16 +49,21 @@ type MoreScreenProps = {
 const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
   const [activeTool, setActiveTool] = React.useState<ToolItem | null>(null);
   const [isReordering, setIsReordering] = React.useState(false);
-  const [orderedItems, setOrderedItems] = React.useState<DraggableToolItem[]>(
-    TOOL_ITEMS.map((item, index) => toDraggableItem(item, index)),
-  );
+  const [orderedItems, setOrderedItems] = React.useState<DraggableToolItem[]>(() => {
+    if (!TOOL_ITEMS || !Array.isArray(TOOL_ITEMS)) {
+      return [];
+    }
+    return TOOL_ITEMS.map((item, index) => toDraggableItem(item, index));
+  });
   const ToolComponent = activeTool?.component;
 
   React.useEffect(() => {
     setActiveTool(null);
     setIsReordering(false);
     // Reset to original order when resetVersion changes
-    setOrderedItems(TOOL_ITEMS.map((item, index) => toDraggableItem(item, index)));
+    if (TOOL_ITEMS && Array.isArray(TOOL_ITEMS)) {
+      setOrderedItems(TOOL_ITEMS.map((item, index) => toDraggableItem(item, index)));
+    }
   }, [resetVersion]);
 
   return (
@@ -99,7 +104,7 @@ const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
             {isReordering ? (
               <DraggableGrid
                 numColumns={4}
-                data={orderedItems}
+                data={orderedItems || []}
                 renderItem={(item: DraggableToolItem) => {
                   return (
                     <View style={styles.draggableItem}>
@@ -111,13 +116,15 @@ const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
                   );
                 }}
                 onDragRelease={(data: DraggableToolItem[]) => {
-                  console.log('[More] Drag release, new order:', data.map(d => d.label));
-                  setOrderedItems(data);
+                  if (data && Array.isArray(data)) {
+                    console.log('[More] Drag release, new order:', data.map(d => d.label));
+                    setOrderedItems(data);
+                  }
                 }}
               />
             ) : (
               <View style={styles.grid}>
-                {orderedItems.map(item => {
+                {(orderedItems || []).map(item => {
                   const toolItem = toToolItem(item);
                   return (
                     <TouchableOpacity
