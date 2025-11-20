@@ -98,7 +98,7 @@ const MoreScreen = ({
             <View style={styles.sheetHeader}>
               <TouchableOpacity
                 style={styles.reorderButton}
-                activeOpacity={0.8}
+                activeOpacity={0.9}
                 onPress={handleToggleReorder}>
                 <Text style={styles.sheetHeaderText}>
                   {isReordering ? 'Done' : 'Reorder'}
@@ -116,7 +116,11 @@ const MoreScreen = ({
                         <View style={styles.iconInner} />
                       </View>
                       <Text style={styles.toolLabel}>{item.label}</Text>
-                      <Text style={styles.areaLabel}>
+                      <Text
+                        style={[
+                          styles.areaLabel,
+                          item.area === 'nav' && styles.areaLabelNav,
+                        ]}>
                         {item.area === 'nav' ? 'Tool bar' : 'More'}
                       </Text>
                     </View>
@@ -164,7 +168,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-    paddingBottom: 72,
+    paddingBottom: 10,
   },
   sheetWrapper: {
     flex: 1,
@@ -175,7 +179,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F8FB',
     borderRadius: 24,
     paddingVertical: 24,
-    paddingHorizontal: 16,
+    paddingHorizontal: 6,
     shadowColor: '#0D2B39',
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -244,6 +248,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#8A9BA8',
     marginTop: 2,
+  },
+  areaLabelNav: {
+    color: '#FF0000',
   },
   toolScreen: {
     flex: 1,
