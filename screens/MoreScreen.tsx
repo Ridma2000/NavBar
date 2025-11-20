@@ -165,6 +165,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: {width: 0, height: 8},
     elevation: 8,
+    position: 'absolute',
+    bottom: 0,
+    left: 20,
+    right: 20,
   },
   sheetHeader: {
     flexDirection: 'row',
