@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity, Animated} from 'react-native';
 import {DraggableGrid} from 'react-native-draggable-grid';
 import {AppItem} from '../data/appItems';
 
@@ -47,6 +47,59 @@ const MoreScreen = ({
     buildReorderTiles(combinedItems, navItemCount),
   );
   const ToolComponent = activeTool?.component;
+  const shakeAnimation = React.useRef(new Animated.Value(0)).current;
+  const isReorderingRef = React.useRef(isReordering);
+
+  React.useEffect(() => {
+    isReorderingRef.current = isReordering;
+  }, [isReordering]);
+
+  React.useEffect(() => {
+    if (isReordering) {
+      // Start shake animation
+      const shake = () => {
+        if (!isReorderingRef.current) {
+          shakeAnimation.setValue(0);
+          return;
+        }
+        Animated.sequence([
+          Animated.timing(shakeAnimation, {
+            toValue: 3,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnimation, {
+            toValue: -3,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnimation, {
+            toValue: 2,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnimation, {
+            toValue: -2,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+          Animated.timing(shakeAnimation, {
+            toValue: 0,
+            duration: 100,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          if (isReorderingRef.current) {
+            shake();
+          }
+        });
+      };
+      shake();
+    } else {
+      // Stop animation and reset
+      shakeAnimation.setValue(0);
+    }
+  }, [isReordering, shakeAnimation]);
 
   React.useEffect(() => {
     setActiveTool(null);
@@ -110,8 +163,18 @@ const MoreScreen = ({
                 numColumns={4}
                 data={reorderItems || []}
                 renderItem={(item: ReorderTile) => {
+                  const rotate = shakeAnimation.interpolate({
+                    inputRange: [-3, 3],
+                    outputRange: ['-3deg', '3deg'],
+                  });
                   return (
-                    <View style={styles.draggableItem}>
+                    <Animated.View
+                      style={[
+                        styles.draggableItem,
+                        isReordering && {
+                          transform: [{rotate}],
+                        },
+                      ]}>
                       <View style={styles.iconShell}>
                         <View style={styles.iconInner} />
                       </View>
@@ -123,7 +186,7 @@ const MoreScreen = ({
                         ]}>
                         {item.area === 'nav' ? 'Tool bar' : 'More'}
                       </Text>
-                    </View>
+                    </Animated.View>
                   );
                 }}
                 onDragRelease={(data: ReorderTile[]) => {
