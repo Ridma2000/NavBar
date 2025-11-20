@@ -1,56 +1,102 @@
-﻿import React from 'react';
-import {SafeAreaView, View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import CalendarScreen from './screens/CalendarScreen';
-import StoreScreen from './screens/StoreScreen';
-import SettingsScreen from './screens/SettingsScreen';
+import React from 'react';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import MoreScreen from './screens/MoreScreen';
+import {
+  AppItem,
+  DEFAULT_MORE_ITEMS,
+  DEFAULT_NAV_SHORTCUTS,
+  NAV_SHORTCUT_COUNT,
+} from './data/appItems';
 
-type NavItem = {
-  label: string;
-  component: React.ComponentType<any>;
-  accentColor?: string;
+const MORE_NAV_ITEM_KEY = 'nav-more';
+const MORE_NAV_ITEM: AppItem = {
+  key: MORE_NAV_ITEM_KEY,
+  label: 'More',
+  component: MoreScreen,
+  accentColor: '#FF7A3C',
 };
 
-const NAV_ITEMS: NavItem[] = [
-  {label: 'Calendar', component: CalendarScreen, accentColor: '#102F44'},
-  {label: 'Store', component: StoreScreen, accentColor: '#102F44'},
-  {label: 'Settings', component: SettingsScreen, accentColor: '#102F44'},
-  {label: 'More', component: MoreScreen, accentColor: '#FF7A3C'},
-];
-
 const App = (): JSX.Element => {
-  const [activeIndex, setActiveIndex] = React.useState(0);
+  const [orderedItems, setOrderedItems] = React.useState<AppItem[]>(() => [
+    ...DEFAULT_NAV_SHORTCUTS,
+    ...DEFAULT_MORE_ITEMS,
+  ]);
+  const [activeKey, setActiveKey] = React.useState<string>(
+    DEFAULT_NAV_SHORTCUTS[0]?.key ?? MORE_NAV_ITEM_KEY,
+  );
   const [moreResetVersion, setMoreResetVersion] = React.useState(0);
-  const ActiveScreen = NAV_ITEMS[activeIndex].component;
-  const isMoreScreenActive = NAV_ITEMS[activeIndex].label === 'More';
+
+  const navShortcuts = React.useMemo(
+    () => orderedItems.slice(0, NAV_SHORTCUT_COUNT),
+    [orderedItems],
+  );
+  const moreItems = React.useMemo(
+    () => orderedItems.slice(NAV_SHORTCUT_COUNT),
+    [orderedItems],
+  );
+  const navItems = React.useMemo<AppItem[]>(
+    () => [...navShortcuts, MORE_NAV_ITEM],
+    [navShortcuts],
+  );
+
+  React.useEffect(() => {
+    if (!navItems.some(item => item.key === activeKey)) {
+      setActiveKey(navItems[0]?.key ?? MORE_NAV_ITEM_KEY);
+    }
+  }, [navItems, activeKey]);
+
+  const activeNavItem =
+    navItems.find(item => item.key === activeKey) ?? navItems[0];
+  const isMoreScreenActive = activeNavItem.key === MORE_NAV_ITEM_KEY;
+  const ActiveScreen = activeNavItem.component;
+
+  const handleNavPress = (item: AppItem) => {
+    console.log(`[Nav] ${item.label} pressed`);
+    if (item.key === MORE_NAV_ITEM_KEY) {
+      setMoreResetVersion(prev => prev + 1);
+    }
+    setActiveKey(item.key);
+  };
+
+  const handleApplyReorder = (
+    nextNavItems: AppItem[],
+    nextMoreItems: AppItem[],
+  ) => {
+    setOrderedItems([...nextNavItems, ...nextMoreItems]);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.body}>
         <View style={styles.screenContainer}>
           {isMoreScreenActive ? (
-            <MoreScreen resetVersion={moreResetVersion} />
+            <MoreScreen
+              resetVersion={moreResetVersion}
+              navItems={navShortcuts}
+              moreItems={moreItems}
+              onApplyReorder={handleApplyReorder}
+            />
           ) : (
             <ActiveScreen />
           )}
         </View>
         <View style={styles.navWrapper}>
           <View style={styles.navBar}>
-            {NAV_ITEMS.map((item, index) => {
-              const isActive = index === activeIndex;
+            {navItems.map(item => {
+              const isActive = item.key === activeKey;
               const accentColor = item.accentColor ?? '#0D2B39';
               return (
                 <TouchableOpacity
-                  key={item.label}
+                  key={item.key}
                   style={styles.navItem}
                   activeOpacity={0.8}
-                  onPress={() => {
-                    console.log(`[Nav] ${item.label} pressed`);
-                    if (item.label === 'More') {
-                      setMoreResetVersion(prev => prev + 1);
-                    }
-                    setActiveIndex(index);
-                  }}>
+                  onPress={() => handleNavPress(item)}>
                   <View
                     style={[
                       styles.icon,
@@ -59,7 +105,10 @@ const App = (): JSX.Element => {
                             styles.iconActive,
                             {
                               borderColor: accentColor,
-                              backgroundColor: accentColor === '#FF7A3C' ? '#FFF5EF' : '#F7F9FC',
+                              backgroundColor:
+                                accentColor === '#FF7A3C'
+                                  ? '#FFF5EF'
+                                  : '#F7F9FC',
                             },
                           ]
                         : styles.iconInactive,

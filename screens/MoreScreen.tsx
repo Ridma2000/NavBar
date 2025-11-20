@@ -1,70 +1,75 @@
 import React from 'react';
 import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import {DraggableGrid} from 'react-native-draggable-grid';
-import EmailSignatureScreen from './tools/EmailSignatureScreen';
-import MeetingSpaceScreen from './tools/MeetingSpaceScreen';
-import HotelBookingScreen from './tools/HotelBookingScreen';
-import ContactsScreen from './tools/ContactsScreen';
-import ConferencingToolScreen from './tools/ConferencingToolScreen';
-import CustomFormScreen from './tools/CustomFormScreen';
-import PersonalWebsiteScreen from './tools/PersonalWebsiteScreen';
-import StripeIntegrationScreen from './tools/StripeIntegrationScreen';
+import {AppItem} from '../data/appItems';
 
-type ToolItem = {
-  label: string;
-  component: React.ComponentType;
-};
-
-type DraggableToolItem = ToolItem & {
-  key: string;
-};
-
-const TOOL_ITEMS: ToolItem[] = [
-  {label: 'Email Signature', component: EmailSignatureScreen},
-  {label: 'Meeting Space', component: MeetingSpaceScreen},
-  {label: 'Hotel Booking', component: HotelBookingScreen},
-  {label: 'Contacts', component: ContactsScreen},
-  {label: 'Conferencing Tool', component: ConferencingToolScreen},
-  {label: 'Custom Form', component: CustomFormScreen},
-  {label: 'Personal Website', component: PersonalWebsiteScreen},
-  {label: 'Stripe Integration', component: StripeIntegrationScreen},
-];
-
-// Helper function to convert ToolItem to DraggableToolItem
-const toDraggableItem = (item: ToolItem, index: number): DraggableToolItem => ({
-  ...item,
-  key: `tool-${index}-${item.label}`,
-});
-
-// Helper function to convert DraggableToolItem back to ToolItem
-const toToolItem = (item: DraggableToolItem): ToolItem => {
-  const {key, ...toolItem} = item;
-  return toolItem;
+type ReorderTile = AppItem & {
+  area: 'more' | 'nav';
 };
 
 type MoreScreenProps = {
   resetVersion?: number;
+  navItems: AppItem[];
+  moreItems: AppItem[];
+  onApplyReorder: (nextNavItems: AppItem[], nextMoreItems: AppItem[]) => void;
 };
 
-const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
-  const [activeTool, setActiveTool] = React.useState<ToolItem | null>(null);
+const buildReorderTiles = (
+  items: AppItem[],
+  navCount: number,
+): ReorderTile[] => {
+  if (!items || items.length === 0) {
+    return [];
+  }
+  const boundary = Math.max(0, items.length - navCount);
+  return items.map((item, index) => ({
+    ...item,
+    area: index >= boundary ? 'nav' : 'more',
+  }));
+};
+
+const stripArea = ({area: _area, ...rest}: ReorderTile): AppItem => rest;
+
+const MoreScreen = ({
+  resetVersion = 0,
+  navItems,
+  moreItems,
+  onApplyReorder,
+}: MoreScreenProps): JSX.Element => {
+  const [activeTool, setActiveTool] = React.useState<AppItem | null>(null);
   const [isReordering, setIsReordering] = React.useState(false);
-  const [orderedItems, setOrderedItems] = React.useState<DraggableToolItem[]>(() => {
-    if (!TOOL_ITEMS || !Array.isArray(TOOL_ITEMS)) {
-      return [];
-    }
-    return TOOL_ITEMS.map((item, index) => toDraggableItem(item, index));
-  });
+  const navItemCount = navItems.length;
+  const combinedItems = React.useMemo(
+    () => [...(moreItems || []), ...(navItems || [])],
+    [moreItems, navItems],
+  );
+  const [reorderItems, setReorderItems] = React.useState<ReorderTile[]>(() =>
+    buildReorderTiles(combinedItems, navItemCount),
+  );
   const ToolComponent = activeTool?.component;
 
   React.useEffect(() => {
     setActiveTool(null);
     setIsReordering(false);
-    // Reset to original order when resetVersion changes
-    if (TOOL_ITEMS && Array.isArray(TOOL_ITEMS)) {
-      setOrderedItems(TOOL_ITEMS.map((item, index) => toDraggableItem(item, index)));
+    setReorderItems(buildReorderTiles(combinedItems, navItemCount));
+  }, [resetVersion, combinedItems, navItemCount]);
+
+  const handleToggleReorder = () => {
+    console.log('[More] Reorder button pressed');
+    if (isReordering) {
+      const nextMoreItems = reorderItems
+        .filter(item => item.area === 'more')
+        .map(stripArea);
+      const nextNavItems = reorderItems
+        .filter(item => item.area === 'nav')
+        .map(stripArea);
+      onApplyReorder(nextNavItems, nextMoreItems);
+      setIsReordering(false);
+    } else {
+      setReorderItems(buildReorderTiles(combinedItems, navItemCount));
+      setIsReordering(true);
     }
-  }, [resetVersion]);
+  };
 
   return (
     <View style={styles.container}>
@@ -94,51 +99,55 @@ const MoreScreen = ({resetVersion = 0}: MoreScreenProps): JSX.Element => {
               <TouchableOpacity
                 style={styles.reorderButton}
                 activeOpacity={0.8}
-                onPress={() => {
-                  console.log('[More] Reorder button pressed');
-                  setIsReordering(prev => !prev);
-                }}>
-                <Text style={styles.sheetHeaderText}>{isReordering ? 'Done' : 'Reorder'}</Text>
+                onPress={handleToggleReorder}>
+                <Text style={styles.sheetHeaderText}>
+                  {isReordering ? 'Done' : 'Reorder'}
+                </Text>
               </TouchableOpacity>
             </View>
             {isReordering ? (
               <DraggableGrid
                 numColumns={4}
-                data={orderedItems || []}
-                renderItem={(item: DraggableToolItem) => {
+                data={reorderItems || []}
+                renderItem={(item: ReorderTile) => {
                   return (
                     <View style={styles.draggableItem}>
                       <View style={styles.iconShell}>
                         <View style={styles.iconInner} />
                       </View>
                       <Text style={styles.toolLabel}>{item.label}</Text>
+                      <Text style={styles.areaLabel}>
+                        {item.area === 'nav' ? 'Tool bar' : 'More'}
+                      </Text>
                     </View>
                   );
                 }}
-                onDragRelease={(data: DraggableToolItem[]) => {
+                onDragRelease={(data: ReorderTile[]) => {
                   if (data && Array.isArray(data)) {
-                    console.log('[More] Drag release, new order:', data.map(d => d.label));
-                    setOrderedItems(data);
+                    console.log(
+                      '[More] Drag release, new order:',
+                      data.map(d => d.label),
+                    );
+                    setReorderItems(buildReorderTiles(data, navItemCount));
                   }
                 }}
               />
             ) : (
               <View style={styles.grid}>
-                {(orderedItems || []).map(item => {
-                  const toolItem = toToolItem(item);
+                {(moreItems || []).map(item => {
                   return (
                     <TouchableOpacity
                       key={item.key}
                       style={styles.toolItem}
                       activeOpacity={0.9}
                       onPress={() => {
-                        console.log(`[More] ${toolItem.label} pressed`);
-                        setActiveTool(toolItem);
+                        console.log(`[More] ${item.label} pressed`);
+                        setActiveTool(item);
                       }}>
                       <View style={styles.iconShell}>
                         <View style={styles.iconInner} />
                       </View>
-                      <Text style={styles.toolLabel}>{toolItem.label}</Text>
+                      <Text style={styles.toolLabel}>{item.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -229,6 +238,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     color: '#1E3A4E',
+  },
+  areaLabel: {
+    fontSize: 10,
+    textAlign: 'center',
+    color: '#8A9BA8',
+    marginTop: 2,
   },
   toolScreen: {
     flex: 1,
