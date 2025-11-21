@@ -48,57 +48,56 @@ const MoreScreen = ({
   );
   const ToolComponent = activeTool?.component;
   const shakeAnimation = React.useRef(new Animated.Value(0)).current;
-  const isReorderingRef = React.useRef(isReordering);
-
-  React.useEffect(() => {
-    isReorderingRef.current = isReordering;
-  }, [isReordering]);
+  const animationRef = React.useRef<Animated.CompositeAnimation | null>(null);
 
   React.useEffect(() => {
     if (isReordering) {
-      // Start shake animation
-      const shake = () => {
-        if (!isReorderingRef.current) {
-          shakeAnimation.setValue(0);
-          return;
-        }
-        Animated.sequence([
-          Animated.timing(shakeAnimation, {
-            toValue: 3,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: -3,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: 2,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: -2,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shakeAnimation, {
-            toValue: 0,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          if (isReorderingRef.current) {
-            shake();
-          }
-        });
-      };
-      shake();
+      // Start shake animation using loop
+      const shakeSequence = Animated.sequence([
+        Animated.timing(shakeAnimation, {
+          toValue: 3,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: -3,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: 2,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: -2,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shakeAnimation, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]);
+      animationRef.current = Animated.loop(shakeSequence);
+      animationRef.current.start();
     } else {
       // Stop animation and reset
+      if (animationRef.current) {
+        animationRef.current.stop();
+        animationRef.current = null;
+      }
       shakeAnimation.setValue(0);
     }
+
+    // Cleanup function
+    return () => {
+      if (animationRef.current) {
+        animationRef.current.stop();
+        animationRef.current = null;
+      }
+    };
   }, [isReordering, shakeAnimation]);
 
   React.useEffect(() => {
